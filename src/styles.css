@@ -1,0 +1,86 @@
+/* Основные стили */
+body {
+    background-color: #f8f9fa;
+    font-family: 'Arial', sans-serif;
+}
+
+.container {
+    max-width: 700px;
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+    margin-top: 50px;
+}
+
+h1 {
+    font-size: 28px;
+    font-weight: bold;
+    color: #007bff;
+    text-transform: uppercase;
+    text-align: center;
+}
+
+hr {
+    border-top: 2px solid #007bff;
+}
+
+.table {
+    background: #fff;
+    border-radius: 5px;
+    overflow: hidden;
+}
+
+.table thead {
+    background: #007bff;
+    color: white;
+}
+
+.table tbody tr:hover {
+    background: rgba(0, 123, 255, 0.1);
+}
+
+/* Стили формы голосования */
+form {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 5px;
+}
+
+label {
+    font-weight: bold;
+}
+
+button {
+    width: 100%;
+    font-size: 18px;
+    font-weight: bold;
+    border-radius: 5px;
+}
+
+.btn-primary {
+    background: #007bff;
+    border: none;
+    transition: background 0.3s ease-in-out;
+}
+
+.btn-primary:hover {
+    background: #0056b3;
+}
+
+/* Стили для лоадера */
+#loader {
+    text-align: center;
+    font-size: 18px;
+    font-weight: bold;
+    color: #6c757d;
+}
+
+/* Стили для адреса аккаунта */
+#accountAddress {
+    font-size: 16px;
+    color: #333;
+    font-weight: bold;
+    text-align: center;
+    margin-top: 15px;
+}
