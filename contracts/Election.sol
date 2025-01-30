@@ -24,7 +24,7 @@ contract Election{
     string  public candidate;
     //constructor
     constructor () public{
-        // candidate = "Rahul Gandhi";
+        // candidate = "President";
         addCandidate("Shamid");
         addCandidate("Yakhiyayeva Marzhan");
         addCandidate("Akylbek Mendibayev");
