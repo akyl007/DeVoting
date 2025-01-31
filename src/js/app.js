@@ -12,7 +12,6 @@ App = {
       App.web3Provider = window.ethereum;
       web3 = new Web3(window.ethereum);
       try {
- 
         await window.ethereum.request({ method: "eth_requestAccounts" });
       } catch (error) {
         console.error("User denied account access");
@@ -30,25 +29,60 @@ App = {
 
   initContract: function() {
     $.getJSON("Election.json", function(election) {
-      // Instantiate a new truffle contract from the artifact
       App.contracts.Election = TruffleContract(election);
-      // Connect provider to interact with contract
       App.contracts.Election.setProvider(App.web3Provider);
+
+      App.listenForEvents(); 
 
       return App.render();
     });
   },
 
-  listenForEvents: function(){
-    App.contracts.Election.deployed().then(function(instance){
-      instance.votedEvent({},{
-          fromBlock: 0,
-          toBlock: 'latest'
-      }).watch(function(error, event){
-        console.log("event triggered", event);
+  listenForEvents: function() {
+    App.contracts.Election.deployed().then(function(instance) {
+      console.log("Listening for events...");
 
-        App.render();
-      });      
+      instance.VotedEvent({}, { fromBlock: "latest" }).watch(function(error, event) {
+        if (!error) {
+          console.log("Vote event received:", event.returnValues);
+          $("#eventLogs").prepend(`<li>Voter ${event.returnValues.voter} voted for candidate #${event.returnValues.candidateId}</li>`);
+          App.render();
+        }
+      });
+
+      instance.CandidateAdded({}, { fromBlock: "latest" }).watch(function(error, event) {
+        if (!error) {
+          console.log("New candidate added:", event.returnValues);
+          $("#eventLogs").prepend(`<li>New candidate added: ${event.returnValues.name}</li>`);
+          App.render();
+        }
+      });
+
+      instance.CandidateRemoved({}, { fromBlock: "latest" }).watch(function(error, event) {
+        if (!error) {
+          console.log("Candidate removed:", event.returnValues);
+          $("#eventLogs").prepend(`<li>Candidate #${event.returnValues.candidateId} was removed.</li>`);
+          App.render();
+        }
+      });
+
+      instance.ElectionEnded({}, { fromBlock: "latest" }).watch(function(error, event) {
+        if (!error) {
+          console.log("Election ended.");
+          $("#eventLogs").prepend(`<li>Election has ended.</li>`);
+          $("#electionStatus").text("Election is CLOSED").removeClass("text-danger").addClass("text-secondary");
+          $("#endElectionBtn").hide();
+          $('form').hide();
+        }
+      });
+
+      instance.ElectionReset({}, { fromBlock: "latest" }).watch(function(error, event) {
+        if (!error) {
+          console.log("Election reset.");
+          $("#eventLogs").prepend(`<li>Election has been reset.</li>`);
+          App.render();
+        }
+      });
     });
   },
 
@@ -56,48 +90,43 @@ App = {
     var electionInstance;
     var loader = $("#loader");
     var content = $("#content");
-  
+
     loader.show();
     content.hide();
-  
-    // Load account data
+
     web3.eth.getCoinbase(function(err, account) {
       if (err === null) {
         App.account = account;
         $("#accountAddress").html("Your Account: " + account);
       }
     });
-  
-    // Load contract data
+
     App.contracts.Election.deployed().then(function(instance) {
       electionInstance = instance;
       return electionInstance.candidatesCount();
     }).then(function(candidatesCount) {
       var candidatesResults = $("#candidatesResults");
       candidatesResults.empty();
-  
+
       var candidatesSelect = $('#candidatesSelect');
       candidatesSelect.empty();
-  
+
       for (var i = 1; i <= candidatesCount; i++) {
         electionInstance.candidates(i).then(function(candidate) {
           var id = candidate[0];
           var name = candidate[1];
           var voteCount = candidate[2];
-  
-          // Render candidate Result
-          var candidateTemplate = "<tr><th>" + id + "</th><td>" + name + "</td><td>" + voteCount + "</td></tr>"
+
+          var candidateTemplate = `<tr><th>${id}</th><td>${name}</td><td>${voteCount}</td></tr>`;
           candidatesResults.append(candidateTemplate);
-  
-          // Render candidate ballot option
-          var candidateOption = "<option value='" + id + "' >" + name + "</ option>"
+
+          var candidateOption = `<option value="${id}">${name}</option>`;
           candidatesSelect.append(candidateOption);
         });
       }
       return electionInstance.voters(App.account);
     }).then(function(hasVoted) {
-      // Do not allow a user to vote
-      if(hasVoted) {
+      if (hasVoted) {
         $('form').hide();
       }
       loader.hide();
@@ -112,14 +141,55 @@ App = {
     App.contracts.Election.deployed().then(function(instance) {
       return instance.vote(candidateId, { from: App.account });
     }).then(function(result) {
-      // Wait for votes to update
       $("#content").hide();
       $("#loader").show();
     }).catch(function(err) {
       console.error(err);
     });
-  }
+  },
 
+  endElection: function() {
+    App.contracts.Election.deployed().then(function(instance) {
+      return instance.endElection({ from: App.account });
+    }).then(function(result) {
+      console.log("Election ended.");
+    }).catch(function(err) {
+      console.error(err);
+    });
+  },
+
+  removeCandidate: function() {
+    var candidateId = $('#candidatesSelect').val();
+    App.contracts.Election.deployed().then(function(instance) {
+      return instance.removeCandidate(candidateId, { from: App.account });
+    }).then(function(result) {
+      console.log("Candidate removed.");
+      App.render();
+    }).catch(function(err) {
+      console.error(err);
+    });
+  },
+
+  registerVoter: function() {
+    var voterAddress = $('#voterAddress').val();
+    App.contracts.Election.deployed().then(function(instance) {
+      return instance.registerVoter(voterAddress, { from: App.account });
+    }).then(function(result) {
+      console.log("Voter registered.");
+    }).catch(function(err) {
+      console.error(err);
+    });
+  },
+
+  resetElection: function() {
+    App.contracts.Election.deployed().then(function(instance) {
+      return instance.resetElection({ from: App.account });
+    }).then(function(result) {
+      console.log("Election reset.");
+    }).catch(function(err) {
+      console.error(err);
+    });
+  }
 };
 
 $(function() {

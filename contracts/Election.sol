@@ -1,56 +1,79 @@
 pragma solidity >=0.4.22 <0.6.0;
 
-contract Election{
-    //model the candidate
-    struct Candidate{
+contract Election {
+    struct Candidate {
         uint id;
         string name;
         uint voteCount;
     }
-    //store candidates
-    //store accounts that have voted
-    mapping(address => bool) public voters;
 
-    //fetch candidate
     mapping(uint => Candidate) public candidates;
-    //store candidates count
+    mapping(address => bool) public voters;
     uint public candidatesCount;
+    bool public electionActive;
 
-    //voted event
-    event votedEvent(
-        uint indexed_candidateId
-    );
+    // События
+    event CandidateAdded(uint indexed candidateId, string name);
+    event CandidateRemoved(uint indexed candidateId);
+    event VotedEvent(uint indexed candidateId, address indexed voter);
+    event VoterRegistered(address indexed voter);
+    event ElectionStarted();
+    event ElectionEnded();
+    event ElectionReset();
 
-    string  public candidate;
-    //constructor
-    constructor () public{
-        // candidate = "President";
+    constructor() public {
+        electionActive = true;
+        emit ElectionStarted();
         addCandidate("Shamid");
         addCandidate("Yakhiyayeva Marzhan");
         addCandidate("Akylbek Mendibayev");
-        addCandidate("Adylbekova Zhanel ");
+        addCandidate("Adylbekova Zhanel");
         addCandidate("Mustafa Akerke");
     }
 
-    function addCandidate (string memory _name) private{
+    function addCandidate(string memory _name) private {
         candidatesCount++;
         candidates[candidatesCount] = Candidate(candidatesCount, _name, 0);
+        emit CandidateAdded(candidatesCount, _name);
     }
 
-    function vote(uint _candidateId) public{
-        //require that they haven't voted before
+    function removeCandidate(uint _candidateId) public {
+        require(_candidateId > 0 && _candidateId <= candidatesCount, "Invalid candidate ID");
+        delete candidates[_candidateId];
+        emit CandidateRemoved(_candidateId);
+    }
+
+    function registerVoter(address _voter) public {
+        require(!voters[_voter], "Voter already registered");
+        voters[_voter] = true;
+        emit VoterRegistered(_voter);
+    }
+
+    function vote(uint _candidateId) public {
+        require(electionActive, "Election is not active");
         require(!voters[msg.sender], "Voter already voted");
+        require(_candidateId > 0 && _candidateId <= candidatesCount, "Invalid candidate ID");
 
-        //require a valid candidate
-        require(_candidateId > 0 && _candidateId <= candidatesCount, "Invalid Id");
-
-        //record that the voter has voted
         voters[msg.sender] = true;
-
-        //update Candidate vote count
         candidates[_candidateId].voteCount++;
 
-        //trigger voted event
-        emit votedEvent(_candidateId);
+        emit VotedEvent(_candidateId, msg.sender);
+    }
+
+    function endElection() public {
+        require(electionActive, "Election already ended");
+        electionActive = false;
+        emit ElectionEnded();
+    }
+
+    function resetElection() public {
+        electionActive = true;
+        for (uint i = 1; i <= candidatesCount; i++) {
+            candidates[i].voteCount = 0;
+        }
+        for (uint i = 1; i <= candidatesCount; i++) {
+            voters[address(i)] = false;
+        }
+        emit ElectionReset();
     }
 }
