@@ -13,6 +13,9 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
+    "chai": "^5.1.2",
+    "ethers": "^6.13.5",
+    "hardhat": "^2.22.18",
     "lite-server": "^2.3.0"
   }
 }
