@@ -113,15 +113,17 @@ App = {
 
       for (var i = 1; i <= candidatesCount; i++) {
         electionInstance.candidates(i).then(function(candidate) {
-          var id = candidate[0];
-          var name = candidate[1];
-          var voteCount = candidate[2];
+          if(candidate[1] !== "") {
+            var id = candidate[0];
+            var name = candidate[1];
+            var voteCount = candidate[2];
 
-          var candidateTemplate = `<tr><th>${id}</th><td>${name}</td><td>${voteCount}</td></tr>`;
-          candidatesResults.append(candidateTemplate);
+            var candidateTemplate = "<tr><th>" + id + "</th><td>" + name + "</td><td>" + voteCount + "</td></tr>"
+            candidatesResults.append(candidateTemplate);
 
-          var candidateOption = `<option value="${id}">${name}</option>`;
-          candidatesSelect.append(candidateOption);
+            var candidateOption = "<option value='" + id + "' >" + name + "</ option>"
+            candidatesSelect.append(candidateOption);
+          }
         });
       }
       return electionInstance.voters(App.account);
