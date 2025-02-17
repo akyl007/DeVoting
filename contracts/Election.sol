@@ -91,11 +91,8 @@ contract Election {
         addCandidate("Mustafa Akerke");
     }
 
-    function addCandidate(string memory _name) private {
-        uint256 nameLength = bytes(_name).length;
-        require(nameLength > 0 && nameLength <= 32, INVALID_NAME_LENGTH);
-        require(candidatesCount + 1 > candidatesCount, NEGATIVE_VALUE);
-        
+    function addCandidate(string memory _name) public onlyAdmin {
+        require(bytes(_name).length > 0 && bytes(_name).length <= 32, INVALID_NAME_LENGTH);
         candidatesCount++;
         candidates[candidatesCount] = Candidate(candidatesCount, _name, 0);
         emit CandidateAdded(candidatesCount, _name);

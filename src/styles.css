@@ -84,3 +84,26 @@ button {
     text-align: center;
     margin-top: 15px;
 }
+
+#adminPanel {
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 5px;
+    margin-top: 20px;
+    border: 2px solid #28a745;
+}
+
+#adminPanel h3 {
+    color: #28a745;
+    margin-bottom: 20px;
+}
+
+#adminPanel .btn-success {
+    background: #28a745;
+    border: none;
+    transition: background 0.3s ease-in-out;
+}
+
+#adminPanel .btn-success:hover {
+    background: #218838;
+}

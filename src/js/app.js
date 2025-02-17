@@ -91,14 +91,24 @@ App = {
     var electionInstance;
     var loader = $("#loader");
     var content = $("#content");
+    var adminPanel = $("#adminPanel");
 
     loader.show();
     content.hide();
+    adminPanel.hide();
 
     web3.eth.getCoinbase(function(err, account) {
       if (err === null) {
         App.account = account;
-        $("#accountAddress").html("Your Account: " + account);
+        $("#accountAddress").html("Your account: " + account);
+        
+        App.contracts.Election.deployed().then(function(instance) {
+          return instance.admin();
+        }).then(function(adminAddress) {
+          if (account === adminAddress) {
+            adminPanel.show();
+          }
+        });
       }
     });
 
@@ -141,7 +151,7 @@ App = {
 
   castVote: function() {
     if (App.isTransactionPending) {
-        console.log("Предыдущая транзакция еще выполняется");
+        console.log("Previous transaction is still executing");
         return false;
     }
     
@@ -160,20 +170,20 @@ App = {
         // Успешное голосование
         $("#content").hide();
         $("#loader").show();
-        voteButton.text("Ваш голос учтен");
+        voteButton.text("Your vote has been counted");
     })
     .catch(function(err) {
         console.error(err);
         // В случае ошибки разблокируем кнопку
         voteButton.prop('disabled', false);
         App.isTransactionPending = false;
-        voteButton.text("Попробуйте снова");
+        voteButton.text("Try again");
     })
     .finally(function() {
         // Сбрасываем состояние только после успешной транзакции
         if (!App.isTransactionPending) {
             voteButton.prop('disabled', false);
-            voteButton.text("Голосовать");
+            voteButton.text("Vote");
         }
     });
     
@@ -240,6 +250,46 @@ App = {
     }).catch(function(err) {
       console.error(err);
     });
+  },
+
+  addCandidate: function() {
+    if (App.isTransactionPending) {
+        console.log("Previous transaction is still executing");
+        return false;
+    }
+
+    var candidateName = $('#candidateName').val();
+    var addButton = $('#adminPanel button[type="submit"]');
+    
+    // Блокируем кнопку и устанавливаем флаг
+    addButton.prop('disabled', true);
+    App.isTransactionPending = true;
+    
+    App.contracts.Election.deployed()
+    .then(function(instance) {
+        return instance.addCandidate(candidateName, { from: App.account });
+    })
+    .then(function(result) {
+        // Очищаем поле ввода
+        $('#candidateName').val('');
+        $("#content").hide();
+        $("#loader").show();
+        addButton.text("Candidate added");
+    })
+    .catch(function(err) {
+        console.error(err);
+        addButton.prop('disabled', false);
+        App.isTransactionPending = false;
+        addButton.text("Try again");
+    })
+    .finally(function() {
+        if (!App.isTransactionPending) {
+            addButton.prop('disabled', false);
+            addButton.text("Add Candidate");
+        }
+    });
+    
+    return false;
   }
 };
 
