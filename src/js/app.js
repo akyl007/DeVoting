@@ -2,6 +2,7 @@ App = {
   web3Provider: null,
   contracts: {},
   account: '0x0',
+  isTransactionPending: false,
 
   init: function() {
     return App.initWeb3();
@@ -139,29 +140,74 @@ App = {
   },
 
   castVote: function() {
+    if (App.isTransactionPending) {
+        console.log("Предыдущая транзакция еще выполняется");
+        return false;
+    }
+    
     var candidateId = $('#candidatesSelect').val();
-    App.contracts.Election.deployed().then(function(instance) {
-      return instance.vote(candidateId, { from: App.account });
-    }).then(function(result) {
-      $("#content").hide();
-      $("#loader").show();
-    }).catch(function(err) {
-      console.error(err);
+    var voteButton = $('form button[type="submit"]');
+    
+    // Блокируем кнопку и устанавливаем флаг
+    voteButton.prop('disabled', true);
+    App.isTransactionPending = true;
+    
+    App.contracts.Election.deployed()
+    .then(function(instance) {
+        return instance.vote(candidateId, { from: App.account });
+    })
+    .then(function(result) {
+        // Успешное голосование
+        $("#content").hide();
+        $("#loader").show();
+        voteButton.text("Ваш голос учтен");
+    })
+    .catch(function(err) {
+        console.error(err);
+        // В случае ошибки разблокируем кнопку
+        voteButton.prop('disabled', false);
+        App.isTransactionPending = false;
+        voteButton.text("Попробуйте снова");
+    })
+    .finally(function() {
+        // Сбрасываем состояние только после успешной транзакции
+        if (!App.isTransactionPending) {
+            voteButton.prop('disabled', false);
+            voteButton.text("Голосовать");
+        }
     });
+    
+    return false; // Предотвращаем отправку формы
   },
 
   endElection: function() {
+    if (App.isTransactionPending) return;
+    
+    var endButton = $('#endElectionBtn');
+    endButton.prop('disabled', true);
+    App.isTransactionPending = true;
+    
     App.contracts.Election.deployed().then(function(instance) {
       return instance.endElection({ from: App.account });
     }).then(function(result) {
       console.log("Election ended.");
     }).catch(function(err) {
       console.error(err);
+    }).finally(function() {
+      endButton.prop('disabled', false);
+      App.isTransactionPending = false;
     });
   },
 
   removeCandidate: function() {
+    if (App.isTransactionPending) return;
+    
+    var removeButton = $('#removeCandidateBtn');
     var candidateId = $('#candidatesSelect').val();
+    
+    removeButton.prop('disabled', true);
+    App.isTransactionPending = true;
+    
     App.contracts.Election.deployed().then(function(instance) {
       return instance.removeCandidate(candidateId, { from: App.account });
     }).then(function(result) {
@@ -169,6 +215,9 @@ App = {
       App.render();
     }).catch(function(err) {
       console.error(err);
+    }).finally(function() {
+      removeButton.prop('disabled', false);
+      App.isTransactionPending = false;
     });
   },
 

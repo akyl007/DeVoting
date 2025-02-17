@@ -39,13 +39,13 @@
           <hr/>
           <p id="accountAddress" class="text-center"></p>
 
-          <form onSubmit="App.castVote(); return false;">
+          <form onSubmit="return App.castVote();">
             <div class="form-group">
-              <label for="candidatesSelect">Select Candidate</label>
-              <select class="form-control" id="candidatesSelect"></select>
+                <label for="candidatesSelect">Select Candidate</label>
+                <select class="form-control" id="candidatesSelect"></select>
             </div>
             <button type="submit" class="btn btn-primary">Vote</button>
-          </form>
+        </form>
 
           <hr />
 
